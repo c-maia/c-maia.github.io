@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Kernel | Blowing Brains]]></title>
+  <link href="http://c-maia.github.io/blog/categories/kernel/atom.xml" rel="self"/>
+  <link href="http://c-maia.github.io/"/>
+  <updated>2020-12-28T19:27:26+00:00</updated>
+  <id>http://c-maia.github.io/</id>
+  <author>
+    <name><![CDATA[Cláudio Maia]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Undefined Reference to __udivdi3]]></title>
+    <link href="http://c-maia.github.io/blog/2010/08/13/undefined-reference-udivdi3/"/>
+    <updated>2010-08-13T23:03:56+00:00</updated>
+    <id>http://c-maia.github.io/blog/2010/08/13/undefined-reference-udivdi3</id>
+    <content type="html"><![CDATA[<p>During the last month I have been playing with real-time scheduling in the Linux kernel. I’ve downloaded the SCHED_DEADLINE implementation from their git repository and did some changes in some files in order to understand better how real-time task scheduling can be handled in Linux using this particular scheduling policy.</p>
+
+<!-- more -->
+
+
+<p>I used a 64-bit machine with Ubuntu and Eclipse CDT version to implement my modifications.</p>
+
+<p><strong>You may wonder why do I use Eclipse?</strong><br/>
+The answer to that is simple. Eclipse has great code indexing and cross-reference features, which are very helpful in understanding the kernel&rsquo;s inner details.</p>
+
+<p>Moving back to the subject of this post, in my 64-bit machine I’m able to compile a modified version of the kernel without any kind of problems but I’m not able to run the compiled version. After some discussion with an expert in the subject, he told me that probably I wasn’t compiling the correct modules that would allow me to run the OS without any problems. Thus, I decided to re-compile the same modified version in an old 32-bit machine which I wasn’t using anymore, to see if I was able to, at least, run the modified version of the kernel.</p>
+
+<p>The processors I&rsquo;m using are the following:</p>
+
+<p>64-bit machine architecture: &ldquo;model name    : AMD Turion&trade; X2 Dual-Core Mobile RM-74&rdquo;
+32-bit machine architecture: &ldquo;model name    : Intel&reg; M processor 1.60GHz&rdquo;</p>
+
+<p>I confess that initially I thought that the compilation process would be smooth, but I got surprised when the code didn’t compile and gcc threw an <strong>Undefined reference to __udivdi3</strong> error.</p>
+
+<p>After some googling, I discovered that the error was thrown in a line where <strong>a division involving u64 data types was being done</strong>. I’ve found some good pointers to the problem, namely:</p>
+
+<p><a href="http://kerneltrap.org/mailarchive/linux-kernel-newbies/2009/2/5/4902104">http://kerneltrap.org/mailarchive/linux-kernel-newbies/2009/2/5/4902104</a><br/>
+<a href="https://bugs.launchpad.net/ubuntu/+source/linux-meta/+bug/237528">https://bugs.launchpad.net/ubuntu/+source/linux-meta/+bug/237528</a></p>
+
+<p>So, according to the above posts, it looks like the problem is caused by a compatibility issue between the kernel sources and gcc v4.3. Well, that made sense to consider as I was using that version in the 32-bit machine. However, after an update of the gcc version to v4.4.3, I still got the same error in the 32-bit machine and, surprisingly, with the same version in my 64-bit machine, the kernel compiles smoothly. So, definitely, this was not a compiler&rsquo;s problem but, most probably, an error related to the machine’s architecture and how 64-bit division is performed.</p>
+
+<p>After some googling (again), I’ve found this Stack Overflow thread that somehow fundaments my suspicions: <a href="https://stackoverflow.com/questions/1063585/udivdi3-undefined-how-to-find-the-code-that-uses-it">https://stackoverflow.com/questions/1063585/udivdi3-undefined-how-to-find-the-code-that-uses-it</a></p>
+
+<p>Indeed, it is an architecture&rsquo;s related issue and how division is being handled. After modifying the kernel&rsquo;s code to perform a 64-bit division in a 32-bit architecture, using the <code>uint32_t do_div(uint64_t dividend, uint32_t divisor)</code> function, the code compiled like a charm.</p>
+
+<p>And now let’s run the kernel!</p>
+]]></content>
+  </entry>
+  
+</feed>
